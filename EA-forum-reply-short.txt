@@ -1,0 +1,11 @@
+Found the cause of error (4) on my PC and a working workaround.
+
+The Javelin launcher and service (EAAntiCheat.GameServiceLauncher.exe / EAAntiCheat.GameService.exe) send their DNS lookups for eaanticheat.ac.ea.com only to 127.0.0.1:53 (localhost). Nothing listens there on a normal Windows install, so the lookup fails every time, the anticheat never reaches its backend, and the match server kicks you with (4) exactly 60 s after joining. Confirmed with packet captures: no fallback to the system DNS, every query answered with "port unreachable". Everything else (login, lobby, other EA hosts) resolves normally.
+
+Workaround: run a tiny DNS forwarder on 127.0.0.1:53 that passes queries unchanged to your normal DNS server. No admin rights, nothing installed, nothing in the game or Javelin is modified. With it running, both EA processes resolve the host within 2 seconds and the game works; without it the error reproduces 100%.
+
+Script + instructions: https://github.com/WaterinoS/apex-dns-fix
+
+Quick check whether this is your case: in PowerShell run  Get-NetUDPEndpoint -LocalPort 53  - if it prints nothing, no DNS server is listening on localhost. Players who already run a local DNS proxy (AdGuard Home, Pi-hole, some VPN/security suites) are not affected, which is why it hits only some of us.
+
+EA: the resolver in Javelin 1.0.16162060 uses 127.0.0.1:53 instead of the system DNS (Windows 11 26H2 26300.9711, Steam). I have pcap captures of a failing and a working session if you want them.
